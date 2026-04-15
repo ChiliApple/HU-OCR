@@ -2,26 +2,15 @@
 .SYNOPSIS
     Bereinigt den OCR-Projektordner fuer einen Clean-Test.
 .DESCRIPTION
-    Loescht alle durch Bootstrap/Laufzeit erzeugten Artefakte:
-      - bin\               (Python, Tesseract, Ghostscript, qpdf)
-      - .firstrun.done
-      - config.json        (user-Ordner-Einstellung)
-      - logs\
-      - processed\
-      - quarantine\
-    Behaelt:
-      - Start-OCR.cmd / Start-OCR.ps1 / Config-GUI.ps1
-      - config.default.json
-      - README.txt
-      - Reset-OCR.*
+    Loescht Bootstrap/Laufzeit-Artefakte: bin\, logs\, processed\, quarantine\,
+    .firstrun.done, config.json. Behaelt Skripte + config.default.json + docs\.
 #>
 [CmdletBinding()]
 param(
-    [switch]$Confirm    # Standard: OHNE Rueckfrage. Mit -Confirm = mit Rueckfrage.
+    [switch]$Confirm
 )
 
 $ErrorActionPreference = 'Stop'
-# Tool-Root = Parent von scripts\
 $Root = Split-Path -Parent $PSScriptRoot
 
 $targets = @(
@@ -84,4 +73,4 @@ foreach ($t in $targets) {
 Write-Host ""
 Write-Host ("=== Reset fertig === Geloescht: {0} | Fehler: {1}" -f $deleted,$failed) -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Naechster Start = First-
+Write-Host "Naechster Start = First-Run (Bootstrap laeuft neu)." -ForegroundColor Yellow

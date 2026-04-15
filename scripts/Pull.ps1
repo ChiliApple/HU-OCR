@@ -1,13 +1,9 @@
 ﻿<#
 .SYNOPSIS
-    HU-OCR Pull - holt aktuelle Skript-/Config-/Doc-Dateien aus dem GitHub-Repo.
+    HU-OCR Pull - holt aktuelle Skript-/Doc-Dateien aus dem GitHub-Repo.
 .DESCRIPTION
     Public Repo ChiliApple/HU-OCR - kein Token benoetigt.
-    Aktualisiert NUR die explizit gelisteten Dateien (siehe $Files).
-    bin\, logs\, processed\, quarantine\, config.json, .firstrun.done bleiben unangetastet.
-.NOTES
-    Wird automatisch von Start-OCR.ps1 aufgerufen wenn Update verfuegbar.
-    Manuell: Pull-OCR.cmd
+    Aktualisiert NUR die explizit gelisteten Dateien.
 #>
 [CmdletBinding()]
 param()
@@ -18,11 +14,9 @@ $ProgressPreference    = 'SilentlyContinue'
 $Owner   = 'ChiliApple'
 $Repo    = 'HU-OCR'
 $Branch  = 'main'
-# Script liegt in scripts/ -> Tool-Root = Parent
 $ScriptDir = $PSScriptRoot
 $Target    = Split-Path -Parent $PSScriptRoot
 
-# Mapping: Repo-Pfad -> lokaler Ziel-Pfad (relativ zu Target)
 $Files = @(
     @{ Repo='Start-OCR.cmd';           Local='Start-OCR.cmd'           },
     @{ Repo='Reset-OCR.cmd';           Local='Reset-OCR.cmd'           },
@@ -96,4 +90,4 @@ Write-Host ("=== Pull fertig ===  OK: $ok  |  Skip: $skip  |  Fehler: $fail") -F
 Write-Host ""
 Write-Host "Starte nun: .\Start-OCR.cmd" -ForegroundColor Yellow
 Write-Host ""
-Read-Host "Enter zum B
+Read-Host "Enter zum Beenden"
