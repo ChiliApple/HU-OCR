@@ -1,0 +1,34 @@
+{
+  "_comment": "OCR Portable Config - wird beim First-Run nach config.json kopiert",
+  "InputFolder": "",
+  "OutputFolder": "",
+  "ProcessedFolder": ".\\processed",
+  "QuarantineFolder": ".\\quarantine",
+  "LogFolder": ".\\logs",
+  "LogRetentionDays": 30,
+  "OcrLanguage": "deu",
+  "OcrArguments": [
+    "--language", "deu",
+    "--skip-text",
+    "--deskew",
+    "--rotate-pages",
+    "--output-type", "pdfa",
+    "--jobs", "2"
+  ],
+  "FileReadyTimeoutSec": 60,
+  "FileReadyPollMs": 500,
+  "DebounceMs": 2000,
+  "OcrTimeoutSec": 300,
+  "OcrRetryCount": 1,
+  "Downloads": {
+    "Python":     "https://www.python.org/ftp/python/3.12.7/python-3.12.7-embed-amd64.zip",
+    "GetPip":     "https://bootstrap.pypa.io/get-pip.py",
+    "Tesseract":  "https://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-w64-setup-5.4.0.20240606.exe",
+    "Ghostscript":"https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10040/gs10040w64.exe",
+    "Qpdf":       "https://github.com/qpdf/qpdf/releases/download/v11.9.1/qpdf-11.9.1-mingw64.zip",
+    "SevenZip":   "https://github.com/ip7z/7zip/releases/download/26.00/7zr.exe",
+    "SevenZipExtra":"https://github.com/ip7z/7zip/releases/download/26.00/7z2600-extra.7z",
+    "TessdataDeu":"https://github.com/tesseract-ocr/tessdata_fast/raw/main/deu.traineddata",
+    "TessdataOsd":"https://github.com/tesseract-ocr/tessdata_fast/raw/main/osd.traineddata"
+  }
+}
