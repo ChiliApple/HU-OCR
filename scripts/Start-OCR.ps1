@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     OCR Portable - Bootstrap + FileSystemWatcher
 .DESCRIPTION
@@ -25,7 +25,7 @@ $ProgressPreference    = 'SilentlyContinue'
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.2.1'
+$script:Version = '1.2.2'
 
 # ==================================================================
 # PFADE
@@ -729,4 +729,15 @@ try {
     }
 
     # Output/Processed/Quarantine anlegen
-    foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder)
+    foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder)), (Resolve-Folder $cfg.QuarantineFolder))) {
+        if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
+    }
+
+    # Watcher starten
+    Start-Watcher -Config $cfg
+}
+catch {
+    Write-Log "FATAL: $($_.Exception.Message)" 'ERROR'
+    Write-Log $_.ScriptStackTrace 'DEBUG'
+    exit 1
+}

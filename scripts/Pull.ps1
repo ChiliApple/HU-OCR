@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     HU-OCR Pull - holt aktuelle Skript-/Config-/Doc-Dateien aus dem GitHub-Repo.
 .DESCRIPTION

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Bereinigt den OCR-Projektordner fuer einen Clean-Test.
 .DESCRIPTION

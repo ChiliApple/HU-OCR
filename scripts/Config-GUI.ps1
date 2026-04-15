@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Windows.Forms GUI zur Auswahl von Input- und Output-Ordner.
 .DESCRIPTION
