@@ -29,10 +29,10 @@ $Files = @(
     @{ Repo='Config-OCR.cmd';          Local='Config-OCR.cmd'          },
     @{ Repo='Pull-OCR.cmd';            Local='Pull-OCR.cmd'            },
     @{ Repo='config.default.json';     Local='config.default.json'     },
-    @{ Repo='README.md';               Local='README.md'               },
-    @{ Repo='Anleitung.md';            Local='Anleitung.md'            },
-    @{ Repo='LICENSE';                 Local='LICENSE'                 },
-    @{ Repo='NOTICE.md';               Local='NOTICE.md'               },
+    @{ Repo='docs/README.md';          Local='docs\README.md'          },
+    @{ Repo='docs/Anleitung.md';       Local='docs\Anleitung.md'       },
+    @{ Repo='docs/LICENSE';            Local='docs\LICENSE'            },
+    @{ Repo='docs/NOTICE.md';          Local='docs\NOTICE.md'          },
     @{ Repo='scripts/Start-OCR.ps1';   Local='scripts\Start-OCR.ps1'   },
     @{ Repo='scripts/Config-GUI.ps1';  Local='scripts\Config-GUI.ps1'  },
     @{ Repo='scripts/Reset-OCR.ps1';   Local='scripts\Reset-OCR.ps1'   },
@@ -61,9 +61,9 @@ try {
     exit 1
 }
 
-$scriptsLocal = Join-Path $Target 'scripts'
-if (-not (Test-Path -LiteralPath $scriptsLocal)) {
-    New-Item -ItemType Directory -Path $scriptsLocal -Force | Out-Null
+foreach ($sub in @('scripts','docs')) {
+    $d = Join-Path $Target $sub
+    if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
 }
 
 $ok = 0; $fail = 0; $skip = 0
@@ -96,4 +96,4 @@ Write-Host ("=== Pull fertig ===  OK: $ok  |  Skip: $skip  |  Fehler: $fail") -F
 Write-Host ""
 Write-Host "Starte nun: .\Start-OCR.cmd" -ForegroundColor Yellow
 Write-Host ""
-Read-Host "Enter zum Beenden"
+Read-Host "Enter zum B

@@ -5,4 +5,5 @@ REM ============================================================
 setlocal
 cd /d "%~dp0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Start-OCR.ps1" -ConfigOnly
-endlocal
+echo.
+pau

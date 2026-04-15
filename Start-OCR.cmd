@@ -8,7 +8,6 @@ REM ============================================================
 setlocal
 cd /d "%~dp0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Start-OCR.ps1" %*
-if errorlevel 1 (
-    echo.
-    echo [!] Start-OCR beendet mit Fehler.
- 
+echo.
+echo --------------------------------------------
+echo  Start-OCR 
