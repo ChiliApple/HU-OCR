@@ -1,8 +1,10 @@
 @echo off
-REM Reset HU-OCR environment (clean test)
-REM  Reset-OCR.cmd           -> direkt loeschen (Standard)
-REM  Reset-OCR.cmd -Confirm  -> mit Rueckfrage
 setlocal
 cd /d "%~dp0"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Reset-OCR.ps1" %*
-e
+echo [CMD] HU-OCR Reset (cwd: %cd%)
+if not exist "scripts\Reset-OCR.ps1" (
+    echo [FEHLER] scripts\Reset-OCR.ps1 nicht gefunden.
+    pause
+    exit /b 1
+)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Reset-OCR.
