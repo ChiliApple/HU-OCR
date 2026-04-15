@@ -25,7 +25,7 @@ $ProgressPreference    = 'SilentlyContinue'
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.2.4'
+$script:Version = '1.2.5'
 
 # ==================================================================
 # PFADE
@@ -729,7 +729,7 @@ try {
     }
 
     # Output/Processed/Quarantine anlegen
-    foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder)), (Resolve-Folder $cfg.QuarantineFolder))) {
+    foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder), (Resolve-Folder $cfg.QuarantineFolder))) {
         if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
     }
 
@@ -741,3 +741,4 @@ catch {
     Write-Log $_.ScriptStackTrace 'DEBUG'
     exit 1
 }
+ 
