@@ -18,6 +18,12 @@ $form = New-Object System.Windows.Forms.Form
 $form.Text = "OCR Portable - Ordner auswaehlen"
 $form.Size = New-Object System.Drawing.Size(560,260)
 $form.StartPosition = "CenterScreen"
+
+# Icon laden (wenn vorhanden)
+$iconPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'assets\icon.ico'
+if (Test-Path -LiteralPath $iconPath) {
+    try { $form.Icon = New-Object System.Drawing.Icon($iconPath) } catch {}
+}
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
 $form.MinimizeBox = $false

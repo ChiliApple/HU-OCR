@@ -30,7 +30,10 @@ $Files = @(
     @{ Repo='scripts/Start-OCR.ps1';   Local='scripts\Start-OCR.ps1'   },
     @{ Repo='scripts/Config-GUI.ps1';  Local='scripts\Config-GUI.ps1'  },
     @{ Repo='scripts/Reset-OCR.ps1';   Local='scripts\Reset-OCR.ps1'   },
-    @{ Repo='scripts/Pull.ps1';        Local='scripts\Pull.ps1'        }
+    @{ Repo='scripts/Pull.ps1';        Local='scripts\Pull.ps1'        },
+    @{ Repo='scripts/Rules-GUI.ps1';   Local='scripts\Rules-GUI.ps1'   },
+    @{ Repo='Rules-OCR.cmd';           Local='Rules-OCR.cmd'            },
+    @{ Repo='assets/icon.ico';         Local='assets\icon.ico'         }
 )
 
 Write-Host ""
@@ -55,7 +58,7 @@ try {
     exit 1
 }
 
-foreach ($sub in @('scripts','docs')) {
+foreach ($sub in @('scripts','docs','assets')) {
     $d = Join-Path $Target $sub
     if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
 }

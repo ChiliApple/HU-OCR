@@ -25,7 +25,7 @@ $ProgressPreference    = 'SilentlyContinue'
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.3.0'
+$script:Version = '1.4.0'
 
 # ==================================================================
 # PFADE
@@ -407,6 +407,89 @@ function Wait-FileReady {
 # ==================================================================
 # OCR AUSFUEHREN
 # ==================================================================
+# ==================================================================
+# NAMING RULES - Dateiname aus Keywords im OCR-Text ableiten
+# ==================================================================
+function Resolve-OutputName {
+    param(
+        [string]$OriginalName,          # z.B. "scan0042.pdf"
+        [string]$SidecarText,           # OCR-Text (first N bytes)
+        $Config
+    )
+    # Feature disabled -> Originalname
+    if (-not $Config.NamingEnabled) { return $OriginalName }
+
+    $rules = @($Config.NamingRules | Where-Object { $_.Enabled })
+    if ($rules.Count -eq 0) { return $OriginalName }
+
+    # Unicode-Normalisierung + Casefold fuer robustes Matching
+    $normalize = {
+        param($s)
+        if ($null -eq $s) { return '' }
+        # NFD + Diakritika-strip + komplette Whitespace-Entfernung
+        # (damit OCR-Zeilenumbrueche keyword-Matches nicht zerstoeren)
+        $nf = $s.Normalize([System.Text.NormalizationForm]::FormD)
+        $sb = New-Object System.Text.StringBuilder
+        foreach ($c in $nf.ToCharArray()) {
+            $uc = [System.Globalization.CharUnicodeInfo]::GetUnicodeCategory($c)
+            if ($uc -eq [System.Globalization.UnicodeCategory]::NonSpacingMark) { continue }
+            if ([char]::IsWhiteSpace($c)) { continue }
+            [void]$sb.Append($c)
+        }
+        return $sb.ToString().ToLowerInvariant()
+    }
+    $haystack = & $normalize $SidecarText
+    $dbg = [bool]$Config.NamingDebug
+    if ($dbg) {
+        $rawPrev  = ($SidecarText -replace "[\r\n]+"," ").Substring(0, [Math]::Min(200, $SidecarText.Length))
+        $normPrev = $haystack.Substring(0, [Math]::Min(200, $haystack.Length))
+        Write-Log ("  Sidecar-Raw ({0} chars): {1}" -f $SidecarText.Length, $rawPrev) 'DEBUG'
+        Write-Log ("  Sidecar-Norm ({0} chars): {1}" -f $haystack.Length, $normPrev) 'DEBUG'
+    }
+
+    $ordered = $rules | Sort-Object -Property @{Expression={[int]$_.Priority}; Descending=$true}
+    foreach ($r in $ordered) {
+        $keywords = @($r.Keywords | Where-Object { $_ -and $_.Trim() })
+        if ($keywords.Count -eq 0) { continue }
+        $matches = 0
+        foreach ($kw in $keywords) {
+            $needle = & $normalize $kw
+            $hit = ($needle -and $haystack.Contains($needle))
+            if ($dbg) { Write-Log ("    Rule '{0}' KW '{1}' -> {2}" -f $r.Name,$kw,$hit) 'DEBUG' }
+            if ($hit) { $matches++ }
+        }
+        $mode = if ($r.MatchMode) { $r.MatchMode.ToString().ToLowerInvariant() } else { 'any' }
+        $hit = if ($mode -eq 'all') { $matches -eq $keywords.Count } else { $matches -ge 1 }
+        if ($hit) {
+            Write-Log "  NamingRule Treffer: '$($r.Name)' -> Prefix '$($r.Prefix)'" 'DEBUG'
+            return Format-NamingTemplate -Template $Config.NamingTemplate -Prefix $r.Prefix -OriginalName $OriginalName
+        }
+    }
+    Write-Log "  NamingRule: kein Treffer -> Fallback" 'DEBUG'
+    return Format-NamingTemplate -Template $Config.NamingTemplateFallback -Prefix '' -OriginalName $OriginalName
+}
+
+function Format-NamingTemplate {
+    param([string]$Template,[string]$Prefix,[string]$OriginalName)
+    if (-not $Template) { return $OriginalName }
+    $base = [System.IO.Path]::GetFileNameWithoutExtension($OriginalName)
+    $ext  = [System.IO.Path]::GetExtension($OriginalName)
+    if (-not $ext) { $ext = '.pdf' }
+    $ts   = Get-Date -Format 'yyyyMMdd-HHmm'
+    # Literal Replace (kein Regex) - simpel und sicher
+    $name = $Template
+    $name = $name.Replace('{Prefix}',       $Prefix)
+    $name = $name.Replace('{Timestamp}',    $ts)
+    $name = $name.Replace('{OriginalName}', $base)
+    # Aufraeumen: doppelte _ / fuehrende _ / trailing _
+    while ($name.Contains('__')) { $name = $name.Replace('__','_') }
+    $name = $name.Trim('_',' ')
+    # Invalid filename chars raus
+    foreach ($c in [System.IO.Path]::GetInvalidFileNameChars()) { $name = $name.Replace([string]$c,'') }
+    if (-not $name) { $name = $base }
+    return "$name$ext"
+}
+
 function Invoke-OcrFile {
     param(
         [string]$InputPdf,
@@ -427,8 +510,9 @@ function Invoke-OcrFile {
     $tempDir = Join-Path $env:TEMP ("hu-ocr\work_" + [guid]::NewGuid().ToString('N').Substring(0,8))
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
     $ext = [System.IO.Path]::GetExtension($fileName)
-    $tmpIn  = Join-Path $tempDir ("input$ext")
-    $tmpOut = Join-Path $tempDir ("output$ext")
+    $tmpIn       = Join-Path $tempDir ("input$ext")
+    $tmpOut      = Join-Path $tempDir ("output$ext")
+    $tmpSidecar  = Join-Path $tempDir "sidecar.txt"
     try {
         Move-Item -LiteralPath $InputPdf -Destination $tmpIn -Force -ErrorAction Stop
         $sz = (Get-Item -LiteralPath $tmpIn).Length
@@ -496,7 +580,63 @@ function Invoke-OcrFile {
     }
 
     if ($success) {
+        # Text aus Output-PDF extrahieren (unabhaengig davon ob OCR lief oder nicht)
+        # -> --skip-text laesst Text-Layer unberuehrt; Sidecar ist dann leer.
+        if ($Config.NamingEnabled) {
+            try {
+                $maxBytes = if ($Config.NamingTextBytes) { [int]$Config.NamingTextBytes } else { 2048 }
+                $pyCode = @"
+import sys
+try:
+    from pdfminer.high_level import extract_text
+    txt = extract_text(sys.argv[1]) or ''
+    sys.stdout.buffer.write(txt.encode('utf-8')[:$maxBytes])
+except Exception as e:
+    sys.stderr.write(str(e))
+    sys.exit(2)
+"@
+                $pyFile = Join-Path $tempDir 'extract.py'
+                [System.IO.File]::WriteAllText($pyFile, $pyCode, [System.Text.UTF8Encoding]::new($false))
+                $psi2 = New-Object System.Diagnostics.ProcessStartInfo
+                $psi2.FileName               = $PythonExe
+                $psi2.Arguments              = "`"$pyFile`" `"$tmpOut`""
+                $psi2.UseShellExecute        = $false
+                $psi2.RedirectStandardOutput = $true
+                $psi2.RedirectStandardError  = $true
+                $psi2.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+                $psi2.CreateNoWindow         = $true
+                $psi2.WorkingDirectory       = $tempDir
+                $p2 = [System.Diagnostics.Process]::Start($psi2)
+                $extractedText = $p2.StandardOutput.ReadToEnd()
+                $p2.WaitForExit(30000) | Out-Null
+                [System.IO.File]::WriteAllText($tmpSidecar, $extractedText, [System.Text.UTF8Encoding]::new($false))
+                Write-Log ("  Text extrahiert: {0} chars" -f $extractedText.Length) 'DEBUG'
+            } catch { Write-Log "  Text-Extract Fehler: $_" 'WARN' }
+        }
         try {
+            # Naming-Regeln anwenden (optional, nur wenn enabled)
+            if ($Config.NamingEnabled -and (Test-Path -LiteralPath $tmpSidecar)) {
+                $maxBytes = if ($Config.NamingTextBytes) { [int]$Config.NamingTextBytes } else { 2048 }
+                $sidecarText = ''
+                try {
+                    $fs = [System.IO.File]::Open($tmpSidecar,'Open','Read','ReadWrite')
+                    try {
+                        $br = New-Object System.IO.BinaryReader($fs,[System.Text.Encoding]::UTF8)
+                        $bytes = $br.ReadBytes($maxBytes)
+                        $sidecarText = [System.Text.Encoding]::UTF8.GetString($bytes)
+                    } finally { $fs.Close() }
+                } catch { Write-Log "  Sidecar-Read Fehler: $_" 'WARN' }
+                $newName = Resolve-OutputName -OriginalName $fileName -SidecarText $sidecarText -Config $Config
+                if ($newName -and $newName -ne $fileName) {
+                    $outPath = Join-Path $Config.OutputFolder $newName
+                    if (Test-Path -LiteralPath $outPath) {
+                        $b = [System.IO.Path]::GetFileNameWithoutExtension($newName)
+                        $e = [System.IO.Path]::GetExtension($newName)
+                        $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+                        $outPath = Join-Path $Config.OutputFolder "${b}_${ts}${e}"
+                    }
+                }
+            }
             # OCR-Ergebnis in Ausgangsordner
             Move-Item -LiteralPath $tmpOut -Destination $outPath -Force -ErrorAction Stop
             Write-Log "OCR OK: $fileName -> $([System.IO.Path]::GetFileName($outPath))" 'OK'
@@ -760,6 +900,8 @@ function Start-Watcher {
 # MAIN
 # ==================================================================
 try {
+    # Console Title (erscheint in Taskleiste)
+    try { $Host.UI.RawUI.WindowTitle = "HU-OCR v$($script:Version)" } catch {}
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Cyan
     Write-Host "  HU-OCR v$($script:Version) - Start"          -ForegroundColor Cyan

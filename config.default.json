@@ -1,5 +1,5 @@
 {
-  "_comment": "OCR Portable Config - wird beim First-Run nach config.json kopiert",
+  "_comment": "HU-OCR Config - wird beim First-Run nach config.json kopiert",
   "InputFolder": "",
   "OutputFolder": "",
   "ProcessedFolder": ".\\processed",
@@ -20,6 +20,37 @@
   "DebounceMs": 2000,
   "OcrTimeoutSec": 300,
   "OcrRetryCount": 1,
+  "NamingEnabled": true,
+  "NamingTemplate": "{Prefix}_{Timestamp}",
+  "NamingTemplateFallback": "{OriginalName}",
+  "NamingTextBytes": 2048,
+  "NamingDebug": false,
+  "NamingRules": [
+    {
+      "Name": "Rechnung Energie",
+      "Keywords": ["Energiegemeinschaft", "Stromrechnung", "Energierechnung"],
+      "MatchMode": "any",
+      "Prefix": "RE_Energie",
+      "Priority": 10,
+      "Enabled": true
+    },
+    {
+      "Name": "Rechnung allgemein",
+      "Keywords": ["Rechnung", "Invoice", "Faktura"],
+      "MatchMode": "any",
+      "Prefix": "RE",
+      "Priority": 5,
+      "Enabled": true
+    },
+    {
+      "Name": "Bescheid Amt",
+      "Keywords": ["Bescheid", "Verordnung", "Amtshandlung"],
+      "MatchMode": "any",
+      "Prefix": "AMT",
+      "Priority": 3,
+      "Enabled": true
+    }
+  ],
   "Downloads": {
     "Python":     "https://www.python.org/ftp/python/3.12.7/python-3.12.7-embed-amd64.zip",
     "GetPip":     "https://bootstrap.pypa.io/get-pip.py",
