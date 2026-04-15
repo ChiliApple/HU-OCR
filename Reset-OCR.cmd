@@ -7,4 +7,9 @@ if not exist "scripts\Reset-OCR.ps1" (
     pause
     exit /b 1
 )
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Reset-OCR.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Reset-OCR.ps1" %*
+set EC=%errorlevel%
+echo.
+echo Reset beendet (ExitCode %EC%)
+pause
+endlocal

@@ -10,4 +10,6 @@ if not exist "scripts\Start-OCR.ps1" (
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Start-OCR.ps1" -ConfigOnly
 set EC=%errorlevel%
 echo.
-echo Config beendet (E
+echo Config beendet (ExitCode %EC%)
+pause
+endlocal
