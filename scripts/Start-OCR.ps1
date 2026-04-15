@@ -15,21 +15,25 @@
 [CmdletBinding()]
 param(
     [switch]$Reconfigure,
+    [switch]$ConfigOnly,     # nur GUI oeffnen, speichern, beenden (ohne Watcher)
     [switch]$SkipBootstrap
 )
 
 $ErrorActionPreference = 'Stop'
-$ProgressPreference    = 'SilentlyContinue'  # schnellere Invoke-WebRequest
+$ProgressPreference    = 'SilentlyContinue'
 
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.0.0'
+$script:Version = '1.1.0'
 
 # ==================================================================
 # PFADE
+#   $ScriptDir = .\scripts\   (dieses .ps1 liegt hier)
+#   $Root      = Tool-Root    (Parent von scripts\)
 # ==================================================================
-$Root          = $PSScriptRoot
+$ScriptDir     = $PSScriptRoot
+$Root          = Split-Path -Parent $PSScriptRoot
 $BinDir        = Join-Path $Root 'bin'
 $PythonDir     = Join-Path $BinDir 'python'
 $PythonExe     = Join-Path $PythonDir 'python.exe'
@@ -38,12 +42,12 @@ $TesseractExe  = Join-Path $TesseractDir 'tesseract.exe'
 $TessdataDir   = Join-Path $TesseractDir 'tessdata'
 $GsDir         = Join-Path $BinDir 'ghostscript'
 $QpdfDir       = Join-Path $BinDir 'qpdf'
-$SevenZipRExe  = Join-Path $BinDir '7zr.exe'          # minimal (nur .7z)
-$SevenZipAExe  = Join-Path $BinDir '7z-extra\7za.exe' # full (NSIS, MSI, etc.)
+$SevenZipRExe  = Join-Path $BinDir '7zr.exe'
+$SevenZipAExe  = Join-Path $BinDir '7z-extra\7za.exe'
 $FirstRunFlag  = Join-Path $Root '.firstrun.done'
 $ConfigFile    = Join-Path $Root 'config.json'
 $DefaultCfg    = Join-Path $Root 'config.default.json'
-$GuiScript     = Join-Path $Root 'Config-GUI.ps1'
+$GuiScript     = Join-Path $ScriptDir 'Config-GUI.ps1'
 
 # ==================================================================
 # LOGGING
@@ -87,7 +91,7 @@ function Clear-OldLogs {
 # ==================================================================
 # UPDATE-CHECK (GitHub public repo, kein Token noetig)
 # ==================================================================
-$script:UpdateRepoApi = 'https://api.github.com/repos/ChiliApple/HU-OCR/contents/Start-OCR.ps1?ref=main'
+$script:UpdateRepoApi = 'https://api.github.com/repos/ChiliApple/HU-OCR/contents/scripts/Start-OCR.ps1?ref=main'
 
 function Invoke-UpdateCheck {
     try {
@@ -107,7 +111,7 @@ function Invoke-UpdateCheck {
                 Write-Host -NoNewline "  Jetzt updaten? (j/N): " -ForegroundColor Yellow
                 $ans = [Console]::ReadLine()
                 if ($ans -match '^[jJyY]') {
-                    $pull = Join-Path $PSScriptRoot 'Pull.ps1'
+                    $pull = Join-Path $ScriptDir 'Pull.ps1'
                     if (Test-Path -LiteralPath $pull) {
                         Write-Log "Update gestartet. Tool schliesst in 3s..." 'OK'
                         Start-Process -FilePath 'powershell.exe' `
@@ -711,24 +715,18 @@ try {
     if (-not $cfg.OutputFolder) { $cfg.OutputFolder = $defaultOut }
 
     # Config-GUI wenn noetig
-    $needGui = $Reconfigure -or -not (Test-Path -LiteralPath $cfg.InputFolder)
+    $needGui = $Reconfigure -or $ConfigOnly -or -not (Test-Path -LiteralPath $cfg.InputFolder)
     if ($needGui) {
         $cfg = Invoke-ConfigGui -Config $cfg
     } else {
-        # Config ohne GUI uebernommen -> speichern
         Save-Config $cfg
     }
 
-    # Output/Processed/Quarantine anlegen
-    foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder), (Resolve-Folder $cfg.QuarantineFolder))) {
-        if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
+    # Nur-Config-Modus -> GUI wurde geoeffnet+gespeichert, jetzt beenden
+    if ($ConfigOnly) {
+        Write-Log "Config gespeichert. Beende (ConfigOnly-Modus)." 'OK'
+        exit 0
     }
 
-    # Watcher starten
-    Start-Watcher -Config $cfg
-}
-catch {
-    Write-Log "FATAL: $($_.Exception.Message)" 'ERROR'
-    Write-Log $_.ScriptStackTrace 'DEBUG'
-    exit 1
-}
+    # Output/Processed/Quarantine anlegen
+    foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder)

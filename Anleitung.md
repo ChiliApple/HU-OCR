@@ -17,6 +17,23 @@ Scan-Ausgang\datei.pdf   +   processed\datei.pdf (Original)
 - **processed** – das Original (Backup)
 - **quarantine** – fehlerhafte PDFs (mit Log-Eintrag)
 
+## Dateien im Tool-Ordner
+
+```
+HU-OCR\
+├── Start-OCR.cmd          ← Normaler Start (doppelklicken)
+├── Config-OCR.cmd         ← Ordner neu wählen
+├── Pull-OCR.cmd           ← Update aus GitHub ziehen
+├── Reset-OCR.cmd          ← Clean-Test (bin\, config, logs löschen)
+├── config.json            ← deine Einstellungen (wird beim First-Run erzeugt)
+├── config.default.json    ← Vorlage (nicht löschen)
+├── LICENSE / NOTICE.md    ← Lizenz + Third-Party-Hinweise
+├── README.md              ← Kurzübersicht
+├── Anleitung.md           ← diese Datei
+├── scripts\               ← PowerShell-Skripte (nicht direkt aufrufen)
+└── bin\                   ← wird beim First-Run befüllt (ca. 400 MB)
+```
+
 ## Erster Start (First-Run)
 
 1. Ordner `HU-OCR` an beliebigen Pfad kopieren (z.B. `C:\Tools\HU-OCR`).
@@ -26,7 +43,7 @@ Scan-Ausgang\datei.pdf   +   processed\datei.pdf (Original)
 5. Ordner-Auswahl-Fenster erscheint:
    - Standard-Vorschlag: `Scan-Eingang` + `Scan-Ausgang` direkt im Tool-Ordner
    - Button „Durchsuchen" öffnet den Explorer im Tool-Ordner
-   - Eigene Ordner wählbar (muss nicht innerhalb des Tool-Ordners sein)
+   - Eigene Ordner wählbar
 6. „Speichern" → Watcher startet.
 
 Das Konsolenfenster bleibt offen und zeigt:
@@ -37,8 +54,7 @@ STRG+C zum Beenden.
 
 ## Normaler Betrieb
 
-- `Start-OCR.cmd` doppelklicken
-- Watcher startet sofort (Bootstrap bereits erledigt)
+- `Start-OCR.cmd` doppelklicken → Watcher startet sofort
 - PDFs in `Scan-Eingang` ablegen → nach ~5-30 Sekunden erscheint OCR-Ergebnis in `Scan-Ausgang`
 - Original wird in `processed` verschoben
 - **Beenden:** STRG+C im Konsolenfenster
@@ -55,18 +71,16 @@ Beim Start prüft das Tool selbstständig auf neue Versionen (GitHub). Bei neuer
 - `j` → `Pull.ps1` startet in neuem Fenster, lädt aktuelle Skripte, danach Tool neu starten
 - `N` → Tool läuft weiter mit aktueller Version
 
+**Manuelles Update:** `Pull-OCR.cmd` doppelklicken.
+
 ## Ordner neu wählen
 
-```
-Start-OCR.cmd -Reconfigure
-```
-Öffnet die Ordner-Auswahl erneut.
+`Config-OCR.cmd` doppelklicken → GUI öffnet sich, neue Ordner auswählen, speichern.
 
 ## Komplett zurücksetzen (Clean Test)
 
-```
-Reset-OCR.cmd
-```
+`Reset-OCR.cmd` doppelklicken.
+
 Löscht `bin\`, `logs\`, `processed\`, `quarantine\`, `.firstrun.done`, `config.json`.
 **Bleibt erhalten:** Skripte + `config.default.json`.
 
@@ -93,44 +107,23 @@ Nächster Start = vollständiger First-Run.
 
 **Option A (offline):** Kompletten Ordner inkl. `bin\` kopieren → sofort lauffähig.
 
-**Option B (online):** Nur Skript-Dateien kopieren:
+**Option B (online):** Nur diese Dateien/Ordner kopieren:
 ```
 Start-OCR.cmd
-Start-OCR.ps1
-Config-GUI.ps1
 Reset-OCR.cmd
-Reset-OCR.ps1
-Pull.ps1
+Config-OCR.cmd
+Pull-OCR.cmd
 config.default.json
+LICENSE
+NOTICE.md
+README.md
 Anleitung.md
+scripts\      (kompletter Ordner)
 ```
-→ `Start-OCR.cmd` → First-Run läuft, lädt alle Abhängigkeiten.
+→ `Start-OCR.cmd` starten → First-Run läuft, lädt alle Abhängigkeiten.
 
 ## Autostart
 
 Aufgabenplanung:
 - Neue Aufgabe
-- Trigger: Bei Anmeldung
-- Aktion: `...\HU-OCR\Start-OCR.cmd`
-- Einstellung: „Nur ausführen wenn Benutzer angemeldet ist"
-
-## Sicherheit
-
-- Keine System-Installation (Python/Tesseract etc. nur in `bin\`)
-- Keine Admin-Rechte nötig
-- Alle OCR-Verarbeitung lokal, keine Cloud-Uploads
-- Update-Check ist eine reine HTTP-GET-Anfrage an GitHub (public, unauthentifiziert)
-
-## Config-Datei
-
-`config.json` im Tool-Ordner. Änderbar mit Texteditor:
-
-| Feld | Bedeutung |
-|---|---|
-| `InputFolder` | Eingangs-Scan-Ordner |
-| `OutputFolder` | Ausgangs-Ordner (OCR-Ergebnis) |
-| `ProcessedFolder` | Wo Originale nach OCR landen |
-| `QuarantineFolder` | Fehlerhafte PDFs |
-| `OcrArguments` | ocrmypdf-Kommandozeilen-Optionen |
-| `OcrTimeoutSec` | Timeout pro Datei (Standard 300s) |
-| `LogRetentionDays` | Log-Dateien älter als X Tage werden gelöscht |
+- 

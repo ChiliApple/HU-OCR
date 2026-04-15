@@ -4,5 +4,5 @@ REM  Reset-OCR.cmd           -> direkt loeschen (Standard)
 REM  Reset-OCR.cmd -Confirm  -> mit Rueckfrage
 setlocal
 cd /d "%~dp0"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\Reset-OCR.ps1" %*
-endlocal
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Reset-OCR.ps1" %*
+e

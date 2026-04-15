@@ -21,7 +21,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$Root = $PSScriptRoot
+# Tool-Root = Parent von scripts\
+$Root = Split-Path -Parent $PSScriptRoot
 
 $targets = @(
     (Join-Path $Root 'bin'),
@@ -83,4 +84,4 @@ foreach ($t in $targets) {
 Write-Host ""
 Write-Host ("=== Reset fertig === Geloescht: {0} | Fehler: {1}" -f $deleted,$failed) -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Naechster Start = First-Run (Bootstrap laeuft neu)." -ForegroundColor Yellow
+Write-Host "Naechster Start = First-
