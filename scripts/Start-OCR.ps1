@@ -25,7 +25,7 @@ $ProgressPreference    = 'SilentlyContinue'
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.2.6'
+$script:Version = '1.3.0'
 
 # ==================================================================
 # PFADE
@@ -602,25 +602,57 @@ function Move-ToQuarantine {
 }
 
 # ==================================================================
-# WATCHER MIT DEBOUNCE
+# WATCHER MIT DEBOUNCE (robust fuer UNC/Netzwerk-Pfade)
 # ==================================================================
+function Test-WatcherPath {
+    param([string]$Path)
+    if (Test-Path -LiteralPath $Path -PathType Container) { return $true }
+    if ($Path -match '^\\\\') {
+        Write-Log "UNC-Pfad nicht erreichbar: $Path - versuche Reconnect..." 'WARN'
+        try {
+            if ($Path -match '^(\\\\[^\\]+\\[^\\]+)') {
+                $share = $Matches[1]
+                $null  = & net.exe use $share /PERSISTENT:NO 2>&1
+                Start-Sleep -Seconds 1
+                if (Test-Path -LiteralPath $Path -PathType Container) {
+                    Write-Log "Reconnect erfolgreich: $share" 'OK'
+                    return $true
+                }
+            }
+        } catch {}
+        Write-Log "Reconnect fehlgeschlagen." 'ERROR'
+    }
+    return $false
+}
+
+function New-ConfiguredWatcher {
+    param([string]$Path)
+    $w = New-Object System.IO.FileSystemWatcher
+    $w.Path = $Path
+    $w.Filter = '*.pdf'
+    $w.IncludeSubdirectories = $false
+    $w.NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite, Size'
+    $w.InternalBufferSize = 65536
+    $w.EnableRaisingEvents = $true
+    return $w
+}
+
 function Start-Watcher {
     param($Config)
 
+    $isUnc = $Config.InputFolder -match '^\\\\'
     Write-Log "Starte Watcher: $($Config.InputFolder)" 'OK'
+    if ($isUnc) { Write-Log "  (UNC-Pfad erkannt - verstaerkte Fehlertoleranz aktiv)" 'INFO' }
     Write-Log "Output: $($Config.OutputFolder)" 'INFO'
     Write-Log "STRG+C zum Beenden." 'INFO'
 
-    # Pending-Queue (Hashtable fuer Debounce)
+    if (-not (Test-WatcherPath -Path $Config.InputFolder)) {
+        Write-Log "Eingangsordner NICHT erreichbar - Watcher startet trotzdem, retry laeuft." 'WARN'
+    }
+
     $pending = New-Object System.Collections.Hashtable
     $lock    = New-Object object
-
-    $watcher = New-Object System.IO.FileSystemWatcher
-    $watcher.Path = $Config.InputFolder
-    $watcher.Filter = '*.pdf'
-    $watcher.IncludeSubdirectories = $false
-    $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite, Size'
-    $watcher.EnableRaisingEvents = $true
+    $errorFlag = @{ ErrorOccurred = $false; LastMsg = '' }
 
     $action = {
         $p = $Event.SourceEventArgs.FullPath
@@ -629,22 +661,74 @@ function Start-Watcher {
         [System.Threading.Monitor]::Enter($l)
         try { $h[$p] = [DateTime]::UtcNow } finally { [System.Threading.Monitor]::Exit($l) }
     }
-    $msg = @{ Pending = $pending; Lock = $lock }
+    $errorAction = {
+        $e = $Event.SourceEventArgs.GetException()
+        $Event.MessageData.ErrorFlag.ErrorOccurred = $true
+        $Event.MessageData.ErrorFlag.LastMsg       = $e.Message
+    }
+    $msg = @{ Pending = $pending; Lock = $lock; ErrorFlag = $errorFlag }
 
-    Register-ObjectEvent -InputObject $watcher -EventName Created -Action $action -MessageData $msg | Out-Null
-    Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $action -MessageData $msg | Out-Null
-    Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $action -MessageData $msg | Out-Null
+    $watcher = New-ConfiguredWatcher -Path $Config.InputFolder
+    $subs = @()
+    $subs += Register-ObjectEvent -InputObject $watcher -EventName Created -Action $action -MessageData $msg
+    $subs += Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $action -MessageData $msg
+    $subs += Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $action -MessageData $msg
+    $subs += Register-ObjectEvent -InputObject $watcher -EventName Error   -Action $errorAction -MessageData $msg
 
-    # Startup: evtl. bereits liegende PDFs verarbeiten
     Get-ChildItem -Path $Config.InputFolder -Filter '*.pdf' -File -ErrorAction SilentlyContinue | ForEach-Object {
         [System.Threading.Monitor]::Enter($lock)
         try { $pending[$_.FullName] = [DateTime]::UtcNow } finally { [System.Threading.Monitor]::Exit($lock) }
     }
 
-    $debounceMs = [int]$Config.DebounceMs
+    $debounceMs      = [int]$Config.DebounceMs
+    $lastHealthCheck = [DateTime]::UtcNow
+    $healthIntervalS = 30
+
     try {
         while ($true) {
             Start-Sleep -Milliseconds 500
+
+            if ($errorFlag.ErrorOccurred) {
+                Write-Log "Watcher-Error: $($errorFlag.LastMsg) - Neustart..." 'WARN'
+                $errorFlag.ErrorOccurred = $false
+                try {
+                    $watcher.EnableRaisingEvents = $false
+                    foreach ($s in $subs) { Unregister-Event -SourceIdentifier $s.Name -EA SilentlyContinue }
+                    $watcher.Dispose()
+                } catch {}
+                $tryReconnect = $true
+                while ($tryReconnect) {
+                    if (Test-WatcherPath -Path $Config.InputFolder) {
+                        try {
+                            $watcher = New-ConfiguredWatcher -Path $Config.InputFolder
+                            $subs = @()
+                            $subs += Register-ObjectEvent -InputObject $watcher -EventName Created -Action $action -MessageData $msg
+                            $subs += Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $action -MessageData $msg
+                            $subs += Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $action -MessageData $msg
+                            $subs += Register-ObjectEvent -InputObject $watcher -EventName Error   -Action $errorAction -MessageData $msg
+                            Write-Log "Watcher neu verbunden." 'OK'
+                            $tryReconnect = $false
+                        } catch {
+                            Write-Log "Watcher-Recreate Fehler: $_ - retry in 10s..." 'WARN'
+                            Start-Sleep -Seconds 10
+                        }
+                    } else {
+                        Write-Log "Pfad nicht erreichbar - retry in 10s..." 'WARN'
+                        Start-Sleep -Seconds 10
+                    }
+                }
+            }
+
+            if ($isUnc -and (([DateTime]::UtcNow - $lastHealthCheck).TotalSeconds -ge $healthIntervalS)) {
+                $lastHealthCheck = [DateTime]::UtcNow
+                if (-not (Test-Path -LiteralPath $Config.InputFolder -PathType Container)) {
+                    Write-Log "Health-Check: Pfad verloren -> Reconnect..." 'WARN'
+                    $errorFlag.ErrorOccurred = $true
+                    $errorFlag.LastMsg = 'Health-Check failed'
+                    continue
+                }
+            }
+
             $ready = @()
             [System.Threading.Monitor]::Enter($lock)
             try {
@@ -659,15 +743,15 @@ function Start-Watcher {
             } finally { [System.Threading.Monitor]::Exit($lock) }
 
             foreach ($f in $ready) {
-                if (Test-Path $f) {
+                if (Test-Path -LiteralPath $f) {
                     Invoke-OcrFile -InputPdf $f -Config $Config
                 }
             }
         }
     } finally {
-        $watcher.EnableRaisingEvents = $false
+        try { $watcher.EnableRaisingEvents = $false } catch {}
         Get-EventSubscriber | Unregister-Event -ErrorAction SilentlyContinue
-        $watcher.Dispose()
+        try { $watcher.Dispose() } catch {}
         Write-Log "Watcher beendet." 'INFO'
     }
 }
@@ -683,25 +767,19 @@ try {
 
     $cfg = Load-Config
 
-    # Log-Folder + Retention
     $logFolder = Resolve-Folder $cfg.LogFolder
     Initialize-Log $logFolder
     Clear-OldLogs -LogFolder $logFolder -RetentionDays $cfg.LogRetentionDays
 
-    # Bootstrap pruefen
     if (-not $SkipBootstrap -and -not (Test-Path $FirstRunFlag)) {
         Invoke-Bootstrap -Config $cfg
     } else {
         Write-Log "Bootstrap uebersprungen (bereits erledigt)." 'DEBUG'
     }
 
-    # Tools in PATH (prozesslokal)
     Set-ToolPaths
-
-    # Update-Check (non-blocking bei Fehler)
     Invoke-UpdateCheck
 
-    # Default Scan-Ordner anlegen (sofort vorhanden, von GUI als Vorschlag nutzbar)
     $defaultIn  = Join-Path $Root 'Scan-Eingang'
     $defaultOut = Join-Path $Root 'Scan-Ausgang'
     foreach ($d in @($defaultIn, $defaultOut)) {
@@ -710,11 +788,9 @@ try {
             Write-Log "Ordner angelegt: $d" 'DEBUG'
         }
     }
-    # Bei leerer Config: Defaults uebernehmen
     if (-not $cfg.InputFolder)  { $cfg.InputFolder  = $defaultIn }
     if (-not $cfg.OutputFolder) { $cfg.OutputFolder = $defaultOut }
 
-    # Config-GUI wenn noetig
     $needGui = $Reconfigure -or $ConfigOnly -or -not (Test-Path -LiteralPath $cfg.InputFolder)
     if ($needGui) {
         $cfg = Invoke-ConfigGui -Config $cfg
@@ -722,18 +798,15 @@ try {
         Save-Config $cfg
     }
 
-    # Nur-Config-Modus -> GUI wurde geoeffnet+gespeichert, jetzt beenden
     if ($ConfigOnly) {
         Write-Log "Config gespeichert. Beende (ConfigOnly-Modus)." 'OK'
         exit 0
     }
 
-    # Output/Processed/Quarantine anlegen
     foreach ($p in @($cfg.OutputFolder, (Resolve-Folder $cfg.ProcessedFolder), (Resolve-Folder $cfg.QuarantineFolder))) {
         if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
     }
 
-    # Watcher starten
     Start-Watcher -Config $cfg
 }
 catch {
@@ -741,4 +814,3 @@ catch {
     Write-Log $_.ScriptStackTrace 'DEBUG'
     exit 1
 }
- 
