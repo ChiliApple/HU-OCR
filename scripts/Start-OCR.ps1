@@ -25,7 +25,7 @@ $ProgressPreference    = 'SilentlyContinue'
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.2.5'
+$script:Version = '1.2.6'
 
 # ==================================================================
 # PFADE
