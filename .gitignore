@@ -1,0 +1,21 @@
+# Runtime / First-Run artefacts - nie committen
+bin/
+logs/
+processed/
+quarantine/
+.firstrun.done
+
+# User-spezifische Config (wird beim First-Run aus config.default.json erzeugt)
+config.json
+
+# User-Scan-Ordner (lokale Daten, nichts fuers Repo)
+Scan-Eingang/
+Scan-Ausgang/
+Eingang/
+Ausgang/
+
+# Windows / OneDrive / Editor-Artefakte
+Thumbs.db
+Desktop.ini
+*.tmp
+*~
