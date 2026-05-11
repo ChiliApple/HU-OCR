@@ -25,7 +25,7 @@ $ProgressPreference    = 'SilentlyContinue'
 # ==================================================================
 # VERSION (MUSS als Literal stehen, wird vom Update-Check via Regex gematched)
 # ==================================================================
-$script:Version = '1.4.0'
+$script:Version = '1.5.0'
 
 # ==================================================================
 # PFADE
@@ -516,7 +516,8 @@ function Invoke-OcrFile {
     try {
         Move-Item -LiteralPath $InputPdf -Destination $tmpIn -Force -ErrorAction Stop
         $sz = (Get-Item -LiteralPath $tmpIn).Length
-        Write-Log "  Eingang->Temp verschoben: ${sz} bytes" 'DEBUG'
+        $szMb = [math]::Ceiling($sz / 1MB)
+        Write-Log "  Eingang->Temp verschoben: ${sz} bytes (${szMb} MB)" 'DEBUG'
     } catch {
         Write-Log "Eingang->Temp fehlgeschlagen: $($_.Exception.Message)" 'ERROR'
         Move-ToQuarantine -Path $InputPdf -Config $Config
@@ -534,6 +535,11 @@ function Invoke-OcrFile {
     }
 
     # ocrmypdf auf Temp-Kopien
+    # Dynamischer Timeout: Max(OcrTimeoutSec, FileSizeMB * OcrTimeoutPerMbSec)
+    $perMb = if ($Config.OcrTimeoutPerMbSec) { [int]$Config.OcrTimeoutPerMbSec } else { 60 }
+    $dynamicTimeout = [Math]::Max([int]$Config.OcrTimeoutSec, $szMb * $perMb)
+    Write-Log "  Timeout: ${dynamicTimeout}s (${szMb} MB x ${perMb}s, min $($Config.OcrTimeoutSec)s)" 'DEBUG'
+
     $maxAttempts = 1 + [int]$Config.OcrRetryCount
     $attempt = 0
     $success = $false
@@ -561,9 +567,9 @@ function Invoke-OcrFile {
             $proc = [System.Diagnostics.Process]::Start($psi)
             $outTask = $proc.StandardOutput.ReadToEndAsync()
             $errTask = $proc.StandardError.ReadToEndAsync()
-            if (-not $proc.WaitForExit($Config.OcrTimeoutSec * 1000)) {
+            if (-not $proc.WaitForExit($dynamicTimeout * 1000)) {
                 try { $proc.Kill() } catch {}
-                Write-Log "Timeout nach $($Config.OcrTimeoutSec)s: $fileName" 'ERROR'
+                Write-Log "Timeout nach ${dynamicTimeout}s (${szMb} MB): $fileName" 'ERROR'
                 continue
             }
             $ec     = $proc.ExitCode

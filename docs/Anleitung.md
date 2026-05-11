@@ -188,7 +188,8 @@ Aufgabenplanung:
 | `InputFolder` / `OutputFolder` | Scan-Ordner |
 | `ProcessedFolder` / `QuarantineFolder` | Backup / Fehlerhafte PDFs |
 | `OcrArguments` | ocrmypdf-Kommandozeilen-Optionen |
-| `OcrTimeoutSec` | Timeout pro Datei (Standard 300s) |
+| `OcrTimeoutSec` | Mindest-Timeout pro Datei (Standard 300s) |
+| `OcrTimeoutPerMbSec` | Sekunden pro MB Dateigröße (Standard 60). Effektiver Timeout = Max(OcrTimeoutSec, Dateigröße×OcrTimeoutPerMbSec). Beispiel: 67 MB → 67×60 = 4020s |
 | `LogRetentionDays` | Log-Dateien älter als X Tage werden gelöscht |
 | `NamingEnabled` | Master-Schalter für Regel-Engine |
 | `NamingTemplate` | Dateinamens-Vorlage bei Treffer |

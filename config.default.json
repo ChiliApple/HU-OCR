@@ -19,6 +19,7 @@
   "FileReadyPollMs": 500,
   "DebounceMs": 2000,
   "OcrTimeoutSec": 300,
+  "OcrTimeoutPerMbSec": 60,
   "OcrRetryCount": 1,
   "NamingEnabled": true,
   "NamingTemplate": "{Prefix}_{Timestamp}",
