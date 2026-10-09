@@ -48,7 +48,7 @@ HU-OCR\
 ├── docs\
 │   ├── README.md           (diese Datei)
 │   ├── Anleitung.md        (User-Anleitung)
-│   ├── LICENSE             (MIT – für die Skripte)
+│   ├── LICENSE             (Nutzungslizenz – für die Skripte)
 │   └── NOTICE.md           (Third-Party-Lizenzen)
 └── scripts\
     ├── Start-OCR.ps1
@@ -73,7 +73,9 @@ processed\             (Original-Backup)
 
 ## Lizenz
 
-HU-OCR-Skripte: **MIT License** – siehe [LICENSE](./LICENSE).
+HU-OCR-Skripte: **Nutzungslizenz** – kostenlose Nutzung für Privatpersonen, Schulen, Behörden, Vereine und Unternehmen erlaubt; Verändern, Weitergeben veränderter Fassungen und Verkauf nur mit Zustimmung. Siehe [LICENSE](./LICENSE).
+
+Fassungen, die vor dem 09.10.2026 veröffentlicht wurden, bleiben unter der MIT-Lizenz.
 
 Third-Party-Tools (Python, Tesseract, Ghostscript, qpdf, ocrmypdf, 7-Zip): werden beim First-Run direkt von den offiziellen Upstream-Quellen auf den PC des Users geladen. Jedes Tool unterliegt seiner eigenen Lizenz. Siehe **[NOTICE.md](./NOTICE.md)**.
 

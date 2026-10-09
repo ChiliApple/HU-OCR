@@ -89,5 +89,5 @@ tool for the first time.
 ## No warranty
 
 All third-party components are provided by their authors "as is" and HU-OCR
-passes through that disclaimer. See the MIT `LICENSE` file for the HU-OCR
-scripts' own warranty disclaimer.
+passes through that disclaimer. See the `LICENSE` file for the HU-OCR
+scripts' own license and warranty disclaimer.

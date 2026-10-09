@@ -175,7 +175,7 @@ Aufgabenplanung:
 
 ## Lizenz
 
-- HU-OCR-Skripte: **MIT** – siehe [LICENSE](./LICENSE)
+- HU-OCR-Skripte: **Nutzungslizenz** (kostenlose Nutzung erlaubt, Verändern/Verkauf nur mit Zustimmung) – siehe [LICENSE](./LICENSE)
 - Third-Party-Tools: eigene Lizenzen beim First-Run akzeptiert – siehe [NOTICE.md](./NOTICE.md)
 - **Ghostscript** ist **AGPL-3.0** – Details in [NOTICE.md](./NOTICE.md)
 

@@ -1,31 +1,113 @@
-MIT License
+HU-OCR - Nutzungslizenz
 
-Copyright (c) 2026 ChiliApple (HU-OCR Contributors)
+Copyright (c) 2026 Die Urheber von HU-OCR. Alle Rechte vorbehalten.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Gilt fuer alle Fassungen, die ab dem 09.10.2026 veroeffentlicht werden.
+Fruehere Fassungen wurden unter der MIT-Lizenz veroeffentlicht; fuer diese
+bereits veroeffentlichten Fassungen gilt weiterhin die damalige Lizenz.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Erlaubte Nutzung
+   Die Software "HU-OCR" (Skripte, Oberflaeche, Dokumentation, Grafiken)
+   darf kostenlos heruntergeladen, installiert und ausgefuehrt werden - von
+   Privatpersonen, Schulen, Behoerden, Vereinen und Unternehmen. Kopien fuer
+   den eigenen Einsatz (z.B. auf USB-Laufwerken, Servern oder Freigaben der
+   eigenen Organisation) sind erlaubt.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Eigene Einstellungen
+   Das Anpassen der Konfigurationsdatei (config.json), der Ordner, der
+   Benennungsregeln und der Download-Adressen mit einem Editor oder den
+   mitgelieferten Werkzeugen (Config-OCR, Rules-OCR) ist ausdruecklich
+   erlaubt.
 
----
+3. Nicht erlaubt (ohne vorherige schriftliche Zustimmung der Urheber)
+   a) die Skripte oder die Dokumentation zu veraendern, zu bearbeiten,
+      zu uebersetzen oder Teile davon in andere Software zu uebernehmen,
+   b) veraenderte Fassungen zu verwenden oder weiterzugeben,
+   c) die Software zu verkaufen, zu vermieten oder gegen Entgelt als Teil
+      eines Produkts oder einer Dienstleistung anzubieten,
+   d) die Software ausserhalb des offiziellen Repositorys zu veroeffentlichen
+      (Weitergabe innerhalb der eigenen Organisation ist erlaubt),
+   e) Urheber-, Lizenz- oder Versionshinweise zu entfernen oder zu aendern.
 
-NOTE: This license applies ONLY to the scripts and documentation in this
-repository (the "HU-OCR scripts"). It does NOT cover the third-party tools
-that are downloaded at runtime to the local bin\ folder (Python, Tesseract,
-Ghostscript, qpdf, ocrmypdf, 7-Zip, etc.). Each of those has its own license
-which the end user must accept by downloading and using them.
+4. Software von Drittanbietern
+   Diese Lizenz gilt NUR fuer die Skripte und die Dokumentation in diesem
+   Repository. Sie gilt NICHT fuer die Werkzeuge von Drittanbietern, die beim
+   ersten Start direkt von den offiziellen Quellen in den lokalen Ordner bin\
+   geladen werden (Python, Tesseract, Ghostscript, qpdf, ocrmypdf, 7-Zip usw.).
+   Fuer diese gelten ausschliesslich deren eigene Lizenzen, die der Anwender
+   mit Download und Nutzung akzeptiert. Details siehe NOTICE.md.
 
-See NOTICE.md for details and third-party license attribution.
+5. GitHub
+   Das Ansehen und Forken des Repositorys im Rahmen der Nutzungsbedingungen
+   von GitHub bleibt unberuehrt. Ein Fork berechtigt nicht zu den unter
+   Punkt 3 genannten Handlungen.
+
+6. Gewaehrleistung und Haftung
+   Die Software wird "wie besehen" ohne jede Gewaehrleistung bereitgestellt.
+   Die Urheber haften - soweit gesetzlich zulaessig - nicht fuer Schaeden,
+   Datenverlust oder Folgeschaeden aus der Nutzung. Ergebnisse der
+   Texterkennung und automatische Dateinamen sind vor einer Weiterverwendung
+   zu pruefen.
+
+7. Schlussbestimmungen
+   Es gilt oesterreichisches Recht. Ist eine Bestimmung unwirksam, bleiben
+   die uebrigen Bestimmungen gueltig.
+
+
+------------------------------------------------------------------------------
+ENGLISH VERSION (convenience translation - in case of doubt the German
+version above prevails)
+------------------------------------------------------------------------------
+
+HU-OCR - License for Use
+
+Copyright (c) 2026 The authors of HU-OCR. All rights reserved.
+
+Applies to all versions published on or after 9 October 2026. Earlier
+versions were published under the MIT License; those already published
+versions remain under that license.
+
+1. Permitted use
+   The software "HU-OCR" (scripts, user interface, documentation, graphics)
+   may be downloaded, installed and run free of charge - by private
+   individuals, schools, public authorities, associations and companies.
+   Copies for your own use (e.g. on USB drives, servers or shares of your
+   own organization) are permitted.
+
+2. Own settings
+   Adjusting the configuration file (config.json), the folders, the naming
+   rules and the download URLs with a text editor or the included tools
+   (Config-OCR, Rules-OCR) is expressly permitted.
+
+3. Not permitted (without prior written consent of the authors)
+   a) to modify, adapt or translate the scripts or the documentation, or to
+      incorporate any part of them into other software,
+   b) to use or distribute modified versions,
+   c) to sell or rent the software, or to offer it for a fee as part of a
+      product or service,
+   d) to publish the software outside the official repository
+      (distribution within your own organization is permitted),
+   e) to remove or alter copyright, license or version notices.
+
+4. Third-party software
+   This license applies ONLY to the scripts and documentation in this
+   repository. It does NOT cover the third-party tools that are downloaded
+   on first run directly from their official sources into the local bin\
+   folder (Python, Tesseract, Ghostscript, qpdf, ocrmypdf, 7-Zip, etc.).
+   Those are governed solely by their own licenses, which the user accepts
+   by downloading and using them. See NOTICE.md for details.
+
+5. GitHub
+   Viewing and forking the repository within the GitHub Terms of Service
+   remains unaffected. A fork does not grant any of the rights listed
+   under section 3.
+
+6. Warranty and liability
+   The software is provided "as is", without warranty of any kind. To the
+   extent permitted by law, the authors are not liable for any damage,
+   data loss or consequential damage arising from its use. OCR results and
+   automatically generated file names must be checked before further use.
+
+7. Final provisions
+   This license is governed by Austrian law. Should any provision be
+   invalid, the remaining provisions shall remain in effect.
